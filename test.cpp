@@ -1,6 +1,4 @@
-﻿// Finite differences.cpp : Этот файл содержит функцию "main". Здесь начинается и заканчивается выполнение программы.
-//
-#include <iostream>
+﻿#include <iostream>
 #include <vector>
 #include <numeric>
 #include <iomanip>
@@ -114,8 +112,8 @@ int main(int argc, char** argv)
     double* lambdaY = lambdaByY[rank];
     double* lambdaX = lambdaByX[rank];
 
-    double temperatureReceive[N]; // N
-    double fReceive[N]; // N
+    double t_Recv[N]; // N
+    double f_Recv[N]; // N
 
     if (rank == 0)
     {
@@ -133,49 +131,48 @@ int main(int argc, char** argv)
         for (int i = 0; i < size; ++i) {
             tridiagonal_matrix((temperature + i * size), (F + i * size), lambdaByX[i], dx, Tx_end, Tx_start);
         }
-        // ----------------------------- i = 0
 
         for (int i = 0; i < 3000; i++)
         {
 
             // n + 1 by Y
             MPI_Scatter(temperature, 1, columnType,
-                temperatureReceive, size, MPI_DOUBLE,
+                t_Recv, size, MPI_DOUBLE,
                 0, MPI_COMM_WORLD);
 
             MPI_Scatter(F, 1, columnType,
-                fReceive, size, MPI_DOUBLE,
+                f_Recv, size, MPI_DOUBLE,
                 0, MPI_COMM_WORLD);
 
 
             double x = x_min + rank * dx;
-            tridiagonal_matrix(temperatureReceive, fReceive, lambdaY, dy, 600 * (1 + x * x * x), 600 * (1 + x));
+            tridiagonal_matrix(t_Recv, f_Recv, lambdaY, dy, 600 * (1 + x * x * x), 600 * (1 + x));
 
-            MPI_Gather(temperatureReceive, size, MPI_DOUBLE,
+            MPI_Gather(t_Recv, size, MPI_DOUBLE,
                 temperature, 1, columnType,
                 0, MPI_COMM_WORLD);
 
-            MPI_Gather(fReceive, size, MPI_DOUBLE,
+            MPI_Gather(f_Recv, size, MPI_DOUBLE,
                 F, 1, columnType,
                 0, MPI_COMM_WORLD);
 
 
             // n + 1/2 by X
             MPI_Scatter(F, size, MPI_DOUBLE,
-                fReceive, size, MPI_DOUBLE,
+                f_Recv, size, MPI_DOUBLE,
                 0, MPI_COMM_WORLD);
 
             MPI_Scatter(temperature, size, MPI_DOUBLE,
-                temperatureReceive, size, MPI_DOUBLE,
+                t_Recv, size, MPI_DOUBLE,
                 0, MPI_COMM_WORLD);
 
-            tridiagonal_matrix(temperatureReceive, fReceive, lambdaX, dx, Tx_end, Tx_start);
+            tridiagonal_matrix(t_Recv, f_Recv, lambdaX, dx, Tx_end, Tx_start);
 
 
-            MPI_Gather(temperatureReceive, size, MPI_DOUBLE,
+            MPI_Gather(t_Recv, size, MPI_DOUBLE,
                 temperature, size, MPI_DOUBLE,
                 0, MPI_COMM_WORLD);
-            MPI_Gather(fReceive, size, MPI_DOUBLE,
+            MPI_Gather(f_Recv, size, MPI_DOUBLE,
                 F, size, MPI_DOUBLE,
                 0, MPI_COMM_WORLD);
 
@@ -203,81 +200,29 @@ int main(int argc, char** argv)
             fs << endl;
         }
         fs.close();
-        // --------------------------- i = 1
-
-       // // n + 1/2 by X
-       //   MPI_Scatter(F, size, MPI_DOUBLE,
-       //       fReceive, size, MPI_DOUBLE,
-       //       0, MPI_COMM_WORLD);
-       //
-       //   MPI_Scatter(temperature, size, MPI_DOUBLE,
-       //       temperatureReceive, size, MPI_DOUBLE,
-       //       0, MPI_COMM_WORLD);
-       //
-       //   //for (int i = 0; i < size; i++)
-       //   //{
-       //   //    std::cout << temperatureReceive[i] << " ";
-       //   //}
-       //   //std::cout << std::endl;
-       //
-       //   tridiagonal_matrix(temperatureReceive, fReceive, lambdaX, dx, Tx_end, Tx_start);
-       //
-       //   MPI_Gather(temperatureReceive, size, MPI_DOUBLE,
-       //       temperature, 1, columnType,
-       //       0, MPI_COMM_WORLD);
-       //   MPI_Gather(fReceive, size, MPI_DOUBLE,
-       //       F, 1, columnType,
-       //       0, MPI_COMM_WORLD);
-       //
-       //   // n + 1 by Y
-       //   MPI_Scatter(temperature, 1, columnType,
-       //       temperatureReceive, size, MPI_DOUBLE,
-       //       0, MPI_COMM_WORLD);
-       //
-       //   MPI_Scatter(F, 1, columnType,
-       //       fReceive, size, MPI_DOUBLE,
-       //       0, MPI_COMM_WORLD);
-       //
-       //   x = x_min + 1 * dx;
-       //   tridiagonal_matrix(temperatureReceive, fReceive, lambdaY, dy, 600 * (1 + x * x * x), 600 * (1 + x));
-       //
-       //   MPI_Gather(temperatureReceive, size, MPI_DOUBLE,
-       //       temperature, 1, columnType,
-       //       0, MPI_COMM_WORLD);
-       //
-       //   MPI_Gather(fReceive, size, MPI_DOUBLE,
-       //       F, 1, columnType,
-       //       0, MPI_COMM_WORLD);
-
-           //for (int i = 0; i < size; ++i) {
-           //    for (int j = 0; j < size; ++j) {
-           //        std::cout << std::setprecision(2) << std::fixed << temperature[i * size + j] << "     ";
-           //    }
-           //    std::cout << std::endl;;
-           //}
+    
     }
     else {
 
-        // ----------------------------- i = 0;
         for (int t = 0; t < 3000; t++)
         {
             // n + 1 by Y
             MPI_Scatter(nullptr, 0, MPI_DOUBLE,
-                temperatureReceive, size, MPI_DOUBLE,
+                t_Recv, size, MPI_DOUBLE,
                 0, MPI_COMM_WORLD);
 
             MPI_Scatter(nullptr, 0, MPI_DOUBLE,
-                fReceive, size, MPI_DOUBLE,
+                f_Recv, size, MPI_DOUBLE,
                 0, MPI_COMM_WORLD);
 
             double x = x_min + rank * dx;
-            tridiagonal_matrix(temperatureReceive, fReceive, lambdaY, dy, 600 * (1 + x * x * x), 600 * (1 + x));
+            tridiagonal_matrix(t_Recv, f_Recv, lambdaY, dy, 600 * (1 + x * x * x), 600 * (1 + x));
 
-            MPI_Gather(temperatureReceive, size, MPI_DOUBLE,
+            MPI_Gather(t_Recv, size, MPI_DOUBLE,
                 nullptr, 0, MPI_DOUBLE,
                 0, MPI_COMM_WORLD);
 
-            MPI_Gather(fReceive, size, MPI_DOUBLE,
+            MPI_Gather(f_Recv, size, MPI_DOUBLE,
                 nullptr, 0, MPI_DOUBLE,
                 0, MPI_COMM_WORLD);
 
@@ -285,71 +230,30 @@ int main(int argc, char** argv)
             // n + 1/2 by X
 
             MPI_Scatter(NULL, size, MPI_DOUBLE,
-                fReceive, size, MPI_DOUBLE,
+                f_Recv, size, MPI_DOUBLE,
                 0, MPI_COMM_WORLD);
 
             MPI_Scatter(NULL, size, MPI_DOUBLE,
-                temperatureReceive, size, MPI_DOUBLE,
+                t_Recv, size, MPI_DOUBLE,
                 0, MPI_COMM_WORLD);
 
-            tridiagonal_matrix(temperatureReceive, fReceive, lambdaX, dx, Tx_end, Tx_start);
+            tridiagonal_matrix(t_Recv, f_Recv, lambdaX, dx, Tx_end, Tx_start);
 
-            MPI_Gather(temperatureReceive, size, MPI_DOUBLE,
+            MPI_Gather(t_Recv, size, MPI_DOUBLE,
                 nullptr, 0, MPI_DOUBLE,
                 0, MPI_COMM_WORLD);
 
-            MPI_Gather(fReceive, size, MPI_DOUBLE,
+            MPI_Gather(f_Recv, size, MPI_DOUBLE,
                 nullptr, 0, MPI_DOUBLE,
                 0, MPI_COMM_WORLD);
         }
-        // ------------------------------------------------- i = 1
-
-        // n + 1/2 by X
-   //  MPI_Scatter(NULL, size, MPI_DOUBLE,
-   //      fReceive, size, MPI_DOUBLE,
-   //      0, MPI_COMM_WORLD);
-   //
-   //  MPI_Scatter(NULL, size, MPI_DOUBLE,
-   //      temperatureReceive, size, MPI_DOUBLE,
-   //      0, MPI_COMM_WORLD);
-   //
-   //  tridiagonal_matrix(temperatureReceive, fReceive, lambdaX, dx, Tx_end, Tx_start);
-   //
-   //  MPI_Gather(temperatureReceive, size, MPI_DOUBLE,
-   //      nullptr, 0, MPI_DOUBLE,
-   //      0, MPI_COMM_WORLD);
-   //
-   //  MPI_Gather(fReceive, size, MPI_DOUBLE,
-   //      nullptr, 0, MPI_DOUBLE,
-   //      0, MPI_COMM_WORLD);
-   //
-   //   // n + 1 by Y
-   //
-   //   MPI_Scatter(nullptr, 0, MPI_DOUBLE,
-   //               temperatureReceive, size, MPI_DOUBLE,
-   //               0, MPI_COMM_WORLD);
-   //
-   //   MPI_Scatter(nullptr, 0, MPI_DOUBLE,
-   //               fReceive, size, MPI_DOUBLE,
-   //               0, MPI_COMM_WORLD);
-   //
-   //   x = x_min + 1 * dx;
-   //   tridiagonal_matrix(temperatureReceive, fReceive, lambdaY, dy, 600 * (1 + x * x * x), 600 * (1 + x));
-   //
-   //   MPI_Gather(temperatureReceive, size, MPI_DOUBLE,
-   //               nullptr, 0, MPI_DOUBLE,
-   //               0, MPI_COMM_WORLD);
-   //
-   //   MPI_Gather(fReceive, size, MPI_DOUBLE,
-   //               nullptr, 0, MPI_DOUBLE,
-   //               0, MPI_COMM_WORLD);
     }
 
     MPI_Type_free(&columnType);
     MPI_Type_free(&not_resized_columnType);
 
     MPI_Finalize();
-
+    // sequential method
     /////--------------- Шаги по слоям n + 1 и n + 1/2
     //// Method ADI's and Algorithm Thomas
     //for (int i = 0; i < N; i++)
